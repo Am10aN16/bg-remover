@@ -26,7 +26,7 @@ export default function App() {
   const processorRef = useRef(null);
 
   useEffect(() => {
-    (async () => {
+    const initializeModel = async () => {
       try {
         if (!navigator.gpu) {
           console.log("WebGPU is not supported in this browser.");
@@ -34,19 +34,27 @@ export default function App() {
         }
         const model_id = "Xenova/modnet";
         env.backends.onnx.wasm.proxy = false;
+
+        // Load the model and processor if they haven't been loaded already
         modelRef.current ??= await AutoModel.from_pretrained(model_id, {
           device: "webgpu",
         });
         processorRef.current ??= await AutoProcessor.from_pretrained(model_id);
-        //  Fetch images from IndexedDB
+
+        // Fetch images from IndexedDB
         // const images = await db.images.toArray();
         // setImages(images.map((image) => URL.createObjectURL(image.file)));
       } catch (err) {
         setError(err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    })();
+    };
+
+    // Call the async function
+    initializeModel();
   }, []);
+
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     for (const file of acceptedFiles) {
